@@ -213,11 +213,7 @@ ymax = y_axis_max
   
  p4
 
-
- 
- tapply(w1118$dCt, w1118$Sample, mean)
-   
- w<-filter(w1118, dCt>0)
+#####Calculate the median of each of my Ct values per sample type and then determine amount greater or less than for each group
  tapply(w$Gal, w$Sample, median)
  
 tapply(w$RpL, w$Sample, median)
