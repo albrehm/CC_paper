@@ -1,9 +1,11 @@
 library(tidyverse)
 library(readxl)
 library(ggpubr)
-install.packages("ggh4x")
 library(ggh4x)
-
+library(rstatix)
+library(binom)
+library(ggsignif)
+library(patchwork)
 #####Figure 2
 ######PBS dip prevalence and load 
 
@@ -41,102 +43,85 @@ df1 <- ooze_dip %>% mutate(dCt = if_else(Positive != "Yes", y_axis_min, dCt))
 df1 <- left_join(df1, df_prevalence_by_group1)
 
 
-create_prev_plot1 <- function (a_Name = NA, 
-                              a_Strain = NA, 
-                              a_Sex = NA, 
-                              a_Stage = NA, 
-                              a_Transmission_mode = NA, 
-                              a_Virus_target = NA,
-                              facet_by = NA,
-                              positive_color = "orange",
-                              negative_color = "lightblue",
-                              exp_color= "red") {
+df1 <- df_prevalence_by_group1
+my_comparisons <- list( c("DGRP-517-", "DGRP-517+"), c("DGRP-517+", "PBS Control"), c("DGRP-517-", "PBS Control"))
   
-  df_to_plot1 <- df_prevalence_by_group1
-  
-  p1 <- ggplot(df_to_plot1) +
-    geom_point(aes(x = Sample, y = percent_positive, fill = Sample), shape = 21, size = 3, stroke = 0.25) +
+p5 <- ggplot(df1, aes(x = Sample, y = percent_positive, fill = Sample)) +
+    geom_point(shape = 21, size = 3, stroke = 0.25) +
     geom_errorbar(aes(x = Sample, ymin = lower_conf_int, ymax = upper_conf_int, color = Sample), width = 0.1) +
     theme_bw(base_size = 13) +
-    ylim(c(0, 100)) +
     xlab("") +
     ylab("") +
-    scale_fill_manual(values = c("DGRP-517-" = negative_color, "DGRP-517+" = positive_color, "PBS Control" = exp_color))+
-    scale_color_manual(values = c("DGRP-517-" = negative_color, "DGRP-517+" = positive_color, "PBS Control" = exp_color))+
+    scale_fill_manual(values = c("DGRP-517-" = "lightblue", "DGRP-517+" = "orange", "PBS Control" = "red"))+
+    scale_color_manual(values = c("DGRP-517-" = "lightblue", "DGRP-517+" = "orange", "PBS Control" = "red"))+
     theme(legend.position = "none",
           axis.text.x = element_blank(),
-          axis.text.y = element_blank())
-  
-  if (!is.na(facet_by)) {
-    p1 <- p1 + facet_wrap(vars(.data[[facet_by]]))
-  }
+          axis.text.y = element_blank())+
+    geom_signif(comparisons = my_comparisons, map_signif_level = TRUE, step_increase = .12)+ylim(0,140)
   
   
   
-  p1
-}
+  p5
 
-prev1<-create_prev_plot1()
 
-prev1
 
-create_levels_plot1 <- function (a_Name = NA, 
-                                a_Strain = NA, 
-                                a_Sex = NA, 
-                                a_Stage = NA, 
-                                a_Transmission_mode = NA, 
-                                a_Virus_target = NA,
-                                facet_by = NA,
-                                ymin = y_axis_min,
-                                ymax = y_axis_max,
-                                positive_color = "orange",
-                                negative_color = "lightblue",
-                                exp_color= "red") {
+
+p1 <- ggplot(df1, aes(x = Sample, y = Gal, fill = Sample)) +
+  geom_jitter(data = filter(df1, Positive == "Yes"), aes(x=Sample, y =Gal),
+              shape = 21, size = 3, stroke = 0.25, height = 0, width = 0.1) +
+  geom_jitter(data = filter(df1, Positive != "Yes"),
+              aes(x = Sample, y = Gal), shape = 21, size = 3, fill = "grey90", alpha = 0.5, stroke = 0.25, height = 0, width = 0.1) +
+  theme_bw(base_size = 13) +
+  scale_fill_manual(values = c("DGRP-517-" = "lightblue", "DGRP-517+" = "orange", "PBS Control" = "red"))+
+  xlab("") +
+  ylab("") +
+  theme(legend.position = "none",
+        strip.text = element_blank(),
+        axis.text.x = element_text(),
+        axis.text.y = element_blank())+
+  stat_compare_means(comparisons = my_comparisons, label="p.signif", hide.ns = TRUE)+ylim(0,45)
+
+
+
+p1
+
+
   
-  df_to_plot1 <- df1
+  my_comparisons <- list( c("DGRP-517-", "DGRP-517+"), c("DGRP-517+", "PBS Control"), c("DGRP-517-", "PBS Control"))
   
-  
-  p1 <- ggplot() +
-    geom_jitter(data = filter(df_to_plot1, Positive == "Yes"), 
-                aes(x = Sample, y = dCt, fill = Sample), shape = 21, size = 3, stroke = 0.25, height = 0, width = 0.1) +
-    geom_jitter(data = filter(df_to_plot1, Positive != "Yes"), 
-                aes(x = Sample, y = dCt), shape = 21, size = 3, fill = "grey90", alpha = 0.5, stroke = 0.25, height = 0, width = 0.1) +
+  p2 <- ggplot(df1, aes(x = Sample, y = RpL, fill = Sample)) +
+    geom_jitter(data = filter(df1, RpL_Positive == "Yes"), aes(x=Sample, y =RpL),
+                shape = 21, size = 3, stroke = 0.25, height = 0, width = 0.1) +
+    geom_jitter(data = filter(df1, RpL_Positive != "Yes"),
+                aes(x = Sample, y = RpL), shape = 21, size = 3, fill = "grey90", alpha = 0.5, stroke = 0.25, height = 0, width = 0.1) +
     theme_bw(base_size = 13) +
-    scale_y_log10(limits = c(ymin, ymax)) +
-    scale_fill_manual(values = c("DGRP-517-" = negative_color, "DGRP-517+" = positive_color, "PBS Control" = exp_color))+
+    scale_fill_manual(values = c("DGRP-517-" = "lightblue", "DGRP-517+" = "orange", "PBS Control" = "red"))+
     xlab("") +
     ylab("") +
-    
     theme(legend.position = "none",
           strip.text = element_blank(),
-          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-          axis.text.y = element_blank())
-  
-  if (!is.na(facet_by)) {
-    p1 <- p1 + facet_wrap(vars(.data[[facet_by]]))
-  }
-  
-  p1
-}
+          axis.text.x = element_text(),
+          axis.text.y = element_blank())+
+    stat_compare_means(comparisons = my_comparisons, label="p.signif")+ ylim(0,45)
 
 
-level1<-create_levels_plot1()
-  
-  
-level1
+
+p2
+
+
   # add labels to left-most plots
-  prev1 <- prev1 + ylab("Prevalence (% Positive Individuals)") + theme(axis.text.y = element_text())+
-    ggtitle("Prevalence and viral load of flies dipped in PBS")
-  level1 <- level1 + ylab("Viral RNA Levels in Infected Individuals\n(Viral RNA Relative to RpL32)") + theme(axis.text.y = element_text())
+  p5 <- p5 + ylab("Prevalence \n(% Positive Individuals)") + theme(axis.text.y = element_text())
+  p1 <- p1 + ylab("Galbut virus Ct") + theme(axis.text.y = element_text())
+  p2 <- p2 + ylab("RpL32 Ct") + theme(axis.text.y = element_text())
   
   # make a big plot with patchwork
-  big_p1 <- (prev1 / level1)
+  big_p1 <- (p5/ p1/p2)
   
   big_p1
   
   # save as PDF
   plot_filename <- paste0("PBS_ooze.pdf")
-  ggsave(filename = plot_filename, plot = big_p1,  width=12, height=8, units="in")
+  ggsave(filename = plot_filename, plot = big_p1,  width=10, height=12, units="in")
   
 
 
@@ -176,101 +161,87 @@ df <- w1118 %>% mutate(dCt = if_else(Positive != "Yes", y_axis_min, dCt))
 df <- left_join(df, df_prevalence_by_group)
 
 
-create_prev_plot <- function (a_Name = NA, 
-                              a_Strain = NA, 
-                              a_Sex = NA, 
-                              a_Stage = NA, 
-                              a_Transmission_mode = NA, 
-                              a_Virus_target = NA,
-                              facet_by = NA,
-                              positive_color = "orange",
-                              negative_color = "lightblue",
-                              exp_color= "red") {
-  
+
+
+###PREVALENCE PLOT
   df_to_plot <- df_prevalence_by_group
+  comp<- list(c("W1118 experimental", "W1118 uninfected control"), c("W1118 uninfected control", "Positive control"), c("W1118 experimental", "Positive control"))
   
-  p <- ggplot(df_to_plot) +
-    geom_point(aes(x = Sample, y = percent_positive, fill = Sample), shape = 21, size = 3, stroke = 0.25) +
+  
+  
+  p <- ggplot(df_to_plot, (aes(x = Sample, y = percent_positive, fill = Sample))) +
+    geom_point(shape = 21, size = 3, stroke = 0.25) +
     geom_errorbar(aes(x = Sample, ymin = lower_conf_int, ymax = upper_conf_int, color = Sample), width = 0.1) +
-    scale_fill_manual(values = c("Positive control" = negative_color, "W1118 experimental" = positive_color, "W1118 uninfected control" = exp_color))+
-    scale_color_manual(values = c("Positive ontrol" = negative_color, "W1118 experimental" = positive_color, "W1118 uninfected control" = exp_color))+
+    scale_fill_manual(values = c("Positive control" = "lightblue", "W1118 experimental" = "orange", "W1118 uninfected control" = "red"))+
+    scale_color_manual(values = c("Positive control" = "lightblue", "W1118 experimental" = "orange", "W1118 uninfected control" = "red"))+
     theme_bw(base_size = 13) +
     ylim(c(0, 100)) +
     xlab("") +
     ylab("") +
     theme(legend.position = "none",
           axis.text.x = element_blank(),
-          axis.text.y = element_blank())
-  
-  if (!is.na(facet_by)) {
-    p <- p + facet_wrap(vars(.data[[facet_by]]))
-  }
-  
-  
-  
-  p
-}
-
-prev<-create_prev_plot()
+          axis.text.y = element_blank())+
+    geom_signif(comparisons = comp, map_signif_level = TRUE, step_increase = .12)+ ylim(0,130)
+    
+    
+p
 
 
-
-create_levels_plot <- function (a_Name = NA, 
-                                a_Strain = NA, 
-                                a_Sex = NA, 
-                                a_Stage = NA, 
-                                a_Transmission_mode = NA, 
-                                a_Virus_target = NA,
-                                facet_by = NA,
-                                ymin = y_axis_min,
-                                ymax = y_axis_max,
-                                positive_color = "orange",
-                                negative_color = "lightblue",
-                                exp_color= "red"){ 
+ymin = y_axis_min
+ymax = y_axis_max
   
+###LOAD PLOT
   df_to_plot <- df
 
   
-  p <- ggplot() +
+  p4 <- ggplot(df_to_plot, aes(x = Sample, y = dCt, fill = Sample)) +
     geom_jitter(data = filter(df_to_plot, Positive == "Yes"), 
-                aes(x = Sample, y = dCt, fill = Sample), shape = 21, size = 3, stroke = 0.25, height = 0, width = 0.1) +
+                 shape = 21, size = 3, stroke = 0.25, height = 0, width = 0.1) +
     geom_jitter(data = filter(df_to_plot, Positive != "Yes"), 
                 aes(x = Sample, y = dCt), shape = 21, size = 3, fill = "grey90", alpha = 0.5, stroke = 0.25, height = 0, width = 0.1) +
     theme_bw(base_size = 13) +
-    scale_fill_manual(values = c("Positive control" = negative_color, "W1118 experimental" = positive_color, "W1118 uninfected control" = exp_color))+
-    scale_y_log10(limits = c(ymin, ymax)) +
+    scale_fill_manual(values = c("Positive control" = "lightblue", "W1118 experimental" = "orange", "W1118 uninfected control" = "red"))+
+    scale_y_log10()+
+    stat_compare_means(comparisons = comp, label = "p.signif")+
     xlab("") +
     ylab("") +
     theme(legend.position = "none",
           strip.text = element_blank(),
-          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          axis.text.x = element_text(),
           axis.text.y = element_blank())
-  
-  if (!is.na(facet_by)) {
-    p <- p + facet_wrap(vars(.data[[facet_by]]))
-  }
-  
-  p
-}
 
+  
+ p4
 
- level<-create_levels_plot()
 
  
-
+ tapply(w1118$dCt, w1118$Sample, mean)
    
+ w<-filter(w1118, dCt>0)
+ tapply(w$Gal, w$Sample, median)
  
+tapply(w$RpL, w$Sample, median)
+ 
+(16.87895/12.89359)
+
+10^1.309096
+
+(29.62207/16.97860)
+
+10^1.744671
+
    # add labels to left-most plots
-   prev <- prev + ylab("Prevalence (% Positive Individuals)") + theme(axis.text.y = element_text())+
-     ggtitle("Prevalence and viral load of flies co-frozen")
-   level <- level + ylab("Viral RNA Levels in Infected Individuals\n(Viral RNA Relative to RpL32)") + theme(axis.text.y = element_text())
+   p <- p + ylab("Prevalence \n(% Positive Individuals)") + theme(axis.text.y = element_text())
+   p4 <- p4 + ylab("RNA Levels \n(Viral RNA Relative to RpL32)") + theme(axis.text.y = element_text())
    
    # make a big plot with patchwork
-   big_p <- (prev / level)
+   big_p <- p / p4
    
-   # save as PDF
+   big_p
+   # save a
+   
    plot_filename1 <- paste0("Ziploc_ooze.pdf")
-   ggsave(filename = plot_filename1, plot = big_p,  width=12, height=8, units="in")
+   ggsave(filename = plot_filename1, plot = big_p,  width=10, height=12, units="in")
    
    big_p
 
