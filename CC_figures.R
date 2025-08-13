@@ -150,12 +150,12 @@ galbut_ct <- galbut_ct + ylab("Galbut virus Ct") + theme(axis.text.y = element_t
 rpl_ct <- rpl_ct + ylab("RpL32 Ct") + theme(axis.text.y = element_text())
 
 # --- Combine plots into one figure ---
-full_plot_dip <- (prevalence_dip / galbut_ct / rpl_ct)
+full_plot_dip <- (prevalence_dip / galbut_ct / rpl_ct)+plot_annotation(tag_levels = "A")
 full_plot_dip
 
 # --- Save to PDF ---
 plot_filename <- paste0("PBS_ooze_new.pdf")
-ggsave(filename = plot_filename, plot = full_plot_dip, width = 10, height = 12, units = "in")
+ggsave(filename = plot_filename, plot = big_p1, width = 10, height = 12, units = "in")
 
   
 
@@ -282,8 +282,8 @@ viral_load_bag
 
 ### --- MEDIAN CALCULATIONS ---
 # Calculate median Ct values per sample type for Galbut virus and RpL32
-tapply(w$Gal, w$Sample, median)
-tapply(w$RpL, w$Sample, median)
+tapply(w1118$Gal, w1118$Sample, median)
+tapply(w1118$RpL, w1118$Sample, median)
 
 # Ratio calculations (example)
 (16.87895 / 12.89359)
@@ -297,7 +297,7 @@ percent_infected_bag  <- percent_infected_bag  + ylab("Galbut virus prevalence \
 viral_load_bag <- viral_load_bag + ylab("Galbut virus RNA levels \nrelative to RpL32 mRNA") + theme(axis.text.y = element_text())
 
 # Combine prevalence and load plots vertically
-big_p <- percent_infected_bag / viral_load_bag
+big_p <- percent_infected_bag / viral_load_bag+plot_annotation(tag_levels = "A")
 big_p
 
 # --- SAVE FIGURE ---
