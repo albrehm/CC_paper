@@ -11,7 +11,6 @@ library(patchwork)
 ######PBS dip prevalence and load 
 
 # Read in PBS_Ooze_Dip.xlsx and convert Sample to a factor
-# --- Set consistent Sample order right after reading the data ---
 desired_order <- c("DGRP-517-", "DGRP-517+", "PBS Control")
 
 ooze_dip <- ooze_dip %>%
@@ -61,7 +60,7 @@ df1 <- ooze_dip %>% mutate(dCt = if_else(Positive != "Yes", y_axis_min, dCt))
 # Merge viral load data with prevalence data
 df1 <- left_join(df1, df_prevalence_by_group_dip)
 
-# Reset df1 to just prevalence data (likely for the prevalence plot)
+# Reset df1 to just prevalence data
 df1 <- df_prevalence_by_group_dip
 
 # Define comparison groups for statistical tests
@@ -89,7 +88,7 @@ prevalence_dip
 # Define significance symbol mapping
 my_symnum <- list(
   cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, 1),
-  symbols = c("****", "***", "**", "*", "NS")  # Force uppercase
+  symbols = c("****", "***", "**", "*", "NS")  
 )
 
 # --- Galbut virus Ct plot ---
